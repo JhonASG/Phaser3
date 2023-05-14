@@ -1,5 +1,12 @@
 {
   "dependencies": {
     "phaser": "^3.60.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.21.5",
+    "@babel/preset-env": "^7.21.5"
+  },
+  "scripts": {
+    "build": "babel src --out-dir dist"
   }
 }
