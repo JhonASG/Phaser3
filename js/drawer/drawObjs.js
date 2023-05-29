@@ -3,7 +3,6 @@ export class drawingObjs {
         this.configObj = config;
         this.obj = obj;
         this.createplayers = [];
-        this.createstars = [];
     }
     createPlatforms ( level ) {
         Object.values( this.configObj[level] ).map ( obj => {
@@ -27,8 +26,10 @@ export class drawingObjs {
         return this.createplayers;
     }
     createStars ( physics, quantity ) {
+        let stars;
+
         for (let q = 1; q <= quantity; q++) {
-            const stars = physics.add.group({
+            stars = physics.add.group({
                 key: "star",
                 repeat: this.configObj[q].quantity,
                 setXY: { 
@@ -42,9 +43,8 @@ export class drawingObjs {
             stars.children.iterate( function (child) {
                 child.setBounce(bounce);
             });
-            this.createstars.push(stars);
         }
 
-        return this.createstars;
+        return stars;
     }
 }

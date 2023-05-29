@@ -1,5 +1,7 @@
 import { drawPlatforms, drawPlayers, drawStars } from "./config/configDrawObjs.js";
 import { drawingObjs } from "./drawer/drawObjs.js";
+import { Movement } from "./controller/movementPlayer.js"
+import { AnimationsPlayer } from "./animations/animsPlayer.js"
 
 // Variables y funciones comunes a todas nuestras class
 let level = 1;
@@ -7,6 +9,7 @@ let playerQuantity = 1;
 let players = [];
 let groupsStars = 1;
 let stars = [];
+let bombs = "";
 
 // Las clases del video juego
 // Especificación de la referencia para dirigir al usuario a x scene
@@ -55,7 +58,6 @@ class MainScene extends Phaser.Scene {
         let platforms = this.physics.add.staticGroup();
 
         //Creamos en el mapa las plataformas (Ground)
-        //posX, posY, assets a dibujar
         const plataformGame = new drawingObjs(
             drawPlatforms,
             platforms
@@ -69,6 +71,10 @@ class MainScene extends Phaser.Scene {
             platforms
         );
         players = playerGame.createPlayer( this.physics, playerQuantity );
+        players[0].score = 0
+        if (playerQuantity == 2) {
+            players[1].score = 0
+        }
 
         //Creamos las estrellas de recompensa
         const starsGame = new drawingObjs(
@@ -78,9 +84,130 @@ class MainScene extends Phaser.Scene {
         stars = starsGame.createStars( this.physics, groupsStars );
 
         //Interación del player con las estrellas
-        /* this.physics.add.overlap(players, stars, collectStar, null, this); */
+        this.physics.add.overlap(players[0], stars, collectStar, null, this);
+        
+        bombs = this.physics.add.group()
+        this.physics.add.collider(bombs, platforms);
+        this.physics.add.collider(players[0], bombs, hitBomb, null, this);
+
+        function hitBomb (player, bomb) {
+            if (playerQuantity == 1) {
+                this.physics.pause();
+                player.setTint(0xff0000);
+                player.anims.play('turnP1');
+    
+                this.time.addEvent({
+                    delay:1500,
+                    loop:false,
+                    callback: () => {
+                        this.scene.start("endScene");
+                    }
+                });
+            } else {
+                player.score = player.score - 50 <= 0 ? 0 : player.score - 50
+                console.log(player.score)
+            }
+        }
+
+        function collectStar(player, star){
+            player.score += 10;
+            colliderStars(star);
+        }
+
+        if ( playerQuantity == 2 ) {
+            this.physics.add.overlap(players[1], stars, collectStar2, null, this);
+
+            function collectStar2(player, star){
+                player.score += 10;
+                colliderStars(star);
+            }
+
+            this.physics.add.collider(players[1], bombs, hitBomb2, null, this);
+
+            function hitBomb2 (player, bomb) {
+                player.score = player.score - 50 <= 0 ? 0 : player.score - 50
+
+                console.log(player.score)
+            }
+        }
+
+        function colliderStars ( star ) {
+            star.disableBody(true, true);
+
+            if ( stars.countActive(true) === 0 ) {
+                const bomb = bombs.create(Phaser.Math.Between(0, 800), 16, "bomb");
+                bomb.setBounce(1);
+                bomb.setCollideWorldBounds(true);
+                bomb.setVelocity(Phaser.Math.Between(-600*level, 600*level), 20);
+
+                stars.children.iterate(function (child) {
+                    child.enableBody(true, child.x, 0, true, true);
+                });
+            }
+        }
+
+        //Creacion animaciones
+        //Tienen una clave que las identifica
+        //Especificamos los frames -> Asset (sprite)
+        //Indicamos la imagen inicial del sprite y la posición de la imagen final que va a tomar para realizar la animación
+        //frameRate para indicar la velocidad de cambio entre un frame y otro
+        const animationP1 = new AnimationsPlayer(
+            ["leftP1", "turnP1", "rightP1"],
+            "dude",
+            this.anims,
+            [
+                [0, 3],
+                [4, 4],
+                [5, 8]
+            ],
+            10,
+            -1
+        );
+
+        animationP1.CreateAnimationsPlayer();
+
+        const animationP2 = new AnimationsPlayer(
+            ["leftP2", "turnP2", "rightP2"],
+            "secondPlayer",
+            this.anims,
+            [
+                [0, 3],
+                [4, 4],
+                [5, 8]
+            ],
+            10,
+            -1
+        );
+
+        animationP2.CreateAnimationsPlayer();
     }
-    update () {}
+    update () {
+        // Detectamos la entrada por teclado
+        let cursors = this.input.keyboard.createCursorKeys();
+        const movementPlayer = new Movement(
+            players[0],
+            cursors.left,
+            cursors.right,
+            cursors.up,
+            ["leftP1", "turnP1", "rightP1"],
+        );
+        movementPlayer.AddMovementPlayer();
+
+        if (playerQuantity == 2) {
+            let keyObjUp = this.input.keyboard.addKey("W")
+            let keyObjleft = this.input.keyboard.addKey("A")
+            let keyObjright = this.input.keyboard.addKey("D")
+
+            const movementPlayer = new Movement(
+                players[1],
+                keyObjleft,
+                keyObjright,
+                keyObjUp,
+                ["leftP2", "turnP2", "rightP2"],
+            );
+            movementPlayer.AddMovementPlayer();
+        }
+    }
 }
 
 class Menu extends Phaser.Scene {
