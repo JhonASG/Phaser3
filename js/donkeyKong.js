@@ -5,11 +5,13 @@ import { AnimationsPlayer } from "./animations/animsPlayer.js"
 
 // Variables y funciones comunes a todas nuestras class
 let level = 1;
-let playerQuantity = 1;
+let playerQuantity = 2;
 let players = [];
 let groupsStars = 1;
 let stars = [];
 let bombs = "";
+let scoreTxtP1 = "";
+let scoreTxtP2 = "";
 
 // Las clases del video juego
 // Especificación de la referencia para dirigir al usuario a x scene
@@ -71,9 +73,16 @@ class MainScene extends Phaser.Scene {
             platforms
         );
         players = playerGame.createPlayer( this.physics, playerQuantity );
-        players[0].score = 0
+        players[0].score = 0;
         if (playerQuantity == 2) {
-            players[1].score = 0
+            players[1].score = 0;
+            this.gameTime = 60;
+            this.timeTXT = this.add.text(350, 0, this.gameTime, {
+                fontFamily: 'font1',
+                fontSize: '64px',
+                color: 'white'
+            });
+            this.refreshTime(); // Metodo Phaser
         }
 
         //Creamos las estrellas de recompensa
@@ -105,13 +114,14 @@ class MainScene extends Phaser.Scene {
                 });
             } else {
                 player.score = player.score - 50 <= 0 ? 0 : player.score - 50
-                console.log(player.score)
+                scoreTxtP1.setText( "Score: " + player.score );
             }
         }
 
         function collectStar(player, star){
             player.score += 10;
             colliderStars(star);
+            scoreTxtP1.setText( "Score: " + player.score );
         }
 
         if ( playerQuantity == 2 ) {
@@ -120,15 +130,20 @@ class MainScene extends Phaser.Scene {
             function collectStar2(player, star){
                 player.score += 10;
                 colliderStars(star);
+                scoreTxtP2.setText( "Score: " + player.score );
             }
 
             this.physics.add.collider(players[1], bombs, hitBomb2, null, this);
 
             function hitBomb2 (player, bomb) {
-                player.score = player.score - 50 <= 0 ? 0 : player.score - 50
-
-                console.log(player.score)
+                player.score = player.score - 50 <= 0 ? 0 : player.score - 50;
+                scoreTxtP2.setText( "Score: " + player.score );
             }
+
+            scoreTxtP2 = this.add.text(600, 16, 'Score: 0', {
+                fontSize: '32px',
+                fill: "#000"
+            });
         }
 
         function colliderStars ( star ) {
@@ -145,6 +160,13 @@ class MainScene extends Phaser.Scene {
                 });
             }
         }
+
+        //Marcador y puntaje player
+        //this.add.text(posX, posY, text, styles)
+        scoreTxtP1 = this.add.text(16, 16, 'Score: 0', {
+            fontSize: '32px',
+            fill: "#000"
+        });
 
         //Creacion animaciones
         //Tienen una clave que las identifica
@@ -181,6 +203,33 @@ class MainScene extends Phaser.Scene {
 
         animationP2.CreateAnimationsPlayer();
     }
+
+    refreshTime () {
+        this.gameTime--;
+        this.timeTXT.setText(this.gameTime);
+
+        if ( this.gameTime === 0 ) {
+            this.physics.pause();
+            players[0].setTint(0xff0000)
+            players[1].setTint(0xff0000)
+
+            this.time.addEvent({
+                delay: 1500,
+                loop: false,
+                callback: () => {
+                    this.scene.start('endScene');
+                }
+            });
+        } else {
+            this.time.delayedCall(
+                1000,
+                this.refreshTime,
+                [],
+                this
+            )
+        }
+    }
+
     update () {
         // Detectamos la entrada por teclado
         let cursors = this.input.keyboard.createCursorKeys();
