@@ -5,11 +5,20 @@ import { AnimationsPlayer } from "./animations/animsPlayer.js"
 
 // Variables y funciones comunes a todas nuestras class
 let level = 1;
-let playerQuantity = 1;
+let playerQuantity = 2;
 let players = [];
 let groupsStars = 1;
 let stars = [];
 let bombs = "";
+let scoreTxtP1 = "";
+let scoreTxtP2 = "";
+let goLeftP1 = false;
+let goLeftP2 = false;
+let goRightP1 = false;
+let goRightP2 = false;
+let goUpP1 = false;
+let goUpP2 = false;
+let stateMusic = true;
 
 // Las clases del video juego
 // Especificación de la referencia para dirigir al usuario a x scene
@@ -46,8 +55,24 @@ class MainScene extends Phaser.Scene {
             frameWidth: 32,
             frameHeight: 48
         });
+
+        // Carga de sonidos
+        this.load.audio('music', '../sounds/Banana_Craziness.mp3');
+        this.load.audio('getStar', '../sounds/Rise06.mp3');
+        this.load.audio('crash', '../sounds/bzzzt.wav');
     }
     create () {
+        //Crear la musica
+        if (stateMusic) {
+            stateMusic = false;
+
+            const music = this.sound.add('music');
+            music.play({
+                volume: 0.15,
+                loop: true,
+            });
+        }
+
         //Creamos el fondo del juego
         //Parametros
         // Width, Height, Nombre del asset de la imagen
@@ -71,9 +96,16 @@ class MainScene extends Phaser.Scene {
             platforms
         );
         players = playerGame.createPlayer( this.physics, playerQuantity );
-        players[0].score = 0
+        players[0].score = 0;
         if (playerQuantity == 2) {
-            players[1].score = 0
+            players[1].score = 0;
+            this.gameTime = 60;
+            this.timeTXT = this.add.text(350, 0, this.gameTime, {
+                fontFamily: 'font1',
+                fontSize: '64px',
+                color: 'white'
+            });
+            this.refreshTime(); // Metodo Phaser
         }
 
         //Creamos las estrellas de recompensa
@@ -105,13 +137,21 @@ class MainScene extends Phaser.Scene {
                 });
             } else {
                 player.score = player.score - 50 <= 0 ? 0 : player.score - 50
-                console.log(player.score)
+                scoreTxtP1.setText( "Score: " + player.score );
             }
+
+            // Ejecutar la musica de bomba le pega al player
+            const musicBomb = this.sound.add('crash');
+            musicBomb.play({
+                volume: 1,
+                loop: false,
+            });
         }
 
         function collectStar(player, star){
             player.score += 10;
-            colliderStars(star);
+            colliderStars(star, this);
+            scoreTxtP1.setText( "Score: " + player.score );
         }
 
         if ( playerQuantity == 2 ) {
@@ -119,19 +159,31 @@ class MainScene extends Phaser.Scene {
 
             function collectStar2(player, star){
                 player.score += 10;
-                colliderStars(star);
+                colliderStars(star, this);
+                scoreTxtP2.setText( "Score: " + player.score );
             }
 
             this.physics.add.collider(players[1], bombs, hitBomb2, null, this);
 
             function hitBomb2 (player, bomb) {
-                player.score = player.score - 50 <= 0 ? 0 : player.score - 50
+                player.score = player.score - 50 <= 0 ? 0 : player.score - 50;
+                scoreTxtP2.setText( "Score: " + player.score );
 
-                console.log(player.score)
+                // Ejecutar la musica de bomba le pega al player
+                const musicBomb = this.sound.add('crash');
+                musicBomb.play({
+                    volume: 1,
+                    loop: false,
+                });
             }
+
+            scoreTxtP2 = this.add.text(600, 16, 'Score: 0', {
+                fontSize: '32px',
+                fill: "#000"
+            });
         }
 
-        function colliderStars ( star ) {
+        function colliderStars ( star, audio ) {
             star.disableBody(true, true);
 
             if ( stars.countActive(true) === 0 ) {
@@ -144,7 +196,21 @@ class MainScene extends Phaser.Scene {
                     child.enableBody(true, child.x, 0, true, true);
                 });
             }
+
+            // Ejecutar la musica de obtener la estrella
+            const musicStar = audio.sound.add('getStar');
+            musicStar.play({
+                volume: 1,
+                loop: false,
+            });
         }
+
+        //Marcador y puntaje player
+        //this.add.text(posX, posY, text, styles)
+        scoreTxtP1 = this.add.text(16, 16, 'Score: 0', {
+            fontSize: '32px',
+            fill: "#000"
+        });
 
         //Creacion animaciones
         //Tienen una clave que las identifica
@@ -180,7 +246,93 @@ class MainScene extends Phaser.Scene {
         );
 
         animationP2.CreateAnimationsPlayer();
+
+        /* Mobile Controls */
+        if ( screen.width <= 900 ) {
+            this.add.image(100, 450, 'controlsPlayer1').setScale(0.5) //Add buttons movement
+
+            //Crear zonas para interactuar con los botones
+            const leftOpcP1 = this.add.zone(15, 420, 50, 50)
+            leftOpcP1.setOrigin(0, 0)
+            leftOpcP1.setInteractive();
+            leftOpcP1.on('pointerdown', () => goLeftP1 = true);
+            leftOpcP1.on('pointerup', () => goLeftP1 = false);
+            leftOpcP1.on('pointerout', () => goLeftP1 = false);
+            //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(leftOpcP1);
+
+            const rightOpcP1 = this.add.zone(132, 420, 50, 50)
+            rightOpcP1.setOrigin(0, 0)
+            rightOpcP1.setInteractive();
+            rightOpcP1.on('pointerdown', () => goRightP1 = true);
+            rightOpcP1.on('pointerup', () => goRightP1 = false);
+            rightOpcP1.on('pointerout', () => goRightP1 = false);
+           //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(rightOpcP1);
+
+            const upOpcP1 = this.add.zone(75, 395, 50, 50)
+            upOpcP1.setOrigin(0, 0)
+            upOpcP1.setInteractive();
+            upOpcP1.on('pointerdown', () => goUpP1 = true);
+            upOpcP1.on('pointerup', () => goUpP1 = false);
+            upOpcP1.on('pointerout', () => goUpP1 = false);
+            //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(upOpcP1);
+
+            if ( playerQuantity == 2 ) {
+                this.add.image(700, 450, 'controlsPlayer2').setScale(0.5) //Add buttons movement
+
+                //Crear zonas para interactuar con los botones
+                const leftOpcP2 = this.add.zone(615, 420, 50, 50)
+                leftOpcP2.setOrigin(0, 0)
+                leftOpcP2.setInteractive();
+                leftOpcP2.on('pointerdown', () => goLeftP2 = true);
+                leftOpcP2.on('pointerup', () => goLeftP2 = false);
+                leftOpcP2.on('pointerout', () => goLeftP2 = false);
+                //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(leftOpcP2);
+
+                const rightOpcP2 = this.add.zone(732, 420, 50, 50)
+                rightOpcP2.setOrigin(0, 0)
+                rightOpcP2.setInteractive();
+                rightOpcP2.on('pointerdown', () => goRightP2 = true);
+                rightOpcP2.on('pointerup', () => goRightP2 = false);
+                rightOpcP2.on('pointerout', () => goRightP2 = false);
+                //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(rightOpcP2);
+
+                const upOpcP2 = this.add.zone(675, 395, 50, 50)
+                upOpcP2.setOrigin(0, 0)
+                upOpcP2.setInteractive();
+                upOpcP2.on('pointerdown', () => goUpP2 = true);
+                upOpcP2.on('pointerup', () => goUpP2 = false);
+                upOpcP2.on('pointerout', () => goUpP2 = false);
+                //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(upOpcP2);
+            }
+        }
     }
+
+    refreshTime () {
+        this.gameTime--;
+        this.timeTXT.setText(this.gameTime);
+
+        if ( this.gameTime === 0 ) {
+            this.physics.pause();
+            players[0].setTint(0xff0000)
+            players[1].setTint(0xff0000)
+
+            this.time.addEvent({
+                delay: 1500,
+                loop: false,
+                callback: () => {
+                    this.scene.start('endScene');
+                }
+            });
+        } else {
+            this.time.delayedCall(
+                1000,
+                this.refreshTime,
+                [],
+                this
+            )
+        }
+    }
+
     update () {
         // Detectamos la entrada por teclado
         let cursors = this.input.keyboard.createCursorKeys();
@@ -190,6 +342,9 @@ class MainScene extends Phaser.Scene {
             cursors.right,
             cursors.up,
             ["leftP1", "turnP1", "rightP1"],
+            goLeftP1,
+            goRightP1,
+            goUpP1
         );
         movementPlayer.AddMovementPlayer();
 
@@ -204,6 +359,9 @@ class MainScene extends Phaser.Scene {
                 keyObjright,
                 keyObjUp,
                 ["leftP2", "turnP2", "rightP2"],
+                goLeftP2,
+                goRightP2,
+                goUpP2
             );
             movementPlayer.AddMovementPlayer();
         }
