@@ -5,7 +5,7 @@ import { AnimationsPlayer } from "./animations/animsPlayer.js"
 
 // Variables y funciones comunes a todas nuestras class
 let level = 1;
-let playerQuantity = 2;
+let playerQuantity = 1;
 let players = [];
 let groupsStars = 1;
 let stars = [];
@@ -19,6 +19,8 @@ let goRightP2 = false;
 let goUpP1 = false;
 let goUpP2 = false;
 let stateMusic = true;
+let levelName = "Easy";
+let modeName = "2 Players";
 
 // Las clases del video juego
 // Especificación de la referencia para dirigir al usuario a x scene
@@ -34,27 +36,27 @@ class MainScene extends Phaser.Scene {
         this.load.baseURL = "./";
 
         //Precargar una imagen en Phaser 3. ("Nombre del asset como referencia", "URL de la img")
-        this.load.image( "jungle", '../img/background.png' );
+        /* this.load.image( "jungle", '../img/background.png' );
         this.load.image( "platform", '../img/platform1.png' );
         this.load.image( "ground", "../img/platform4.png" );
         this.load.image( "star", "../img/star.png" );
         this.load.image( "bomb", "../img/bomb.png" );
         this.load.image( "controlsPlayer1", "../img/Player1.png" );
-        this.load.image( "controlsPlayer2", "../img/Player2.png" );
+        this.load.image( "controlsPlayer2", "../img/Player2.png" ); */
 
         //Precargar los sprites en Phaser 3.
         //Parametros
         //1) Nombre del asset para acceder a el luego
         //2) Nombre de la ruta en la que se encuentra el asset
         //3) Tamaño de recorte del sprite para acceder a cada imagen en el sprite
-        this.load.spritesheet( "dude", "../img/dude.png", {
+        /* this.load.spritesheet( "dude", "../img/dude.png", {
             frameWidth: 32,
             frameHeight: 48
         });
         this.load.spritesheet( "secondPlayer", "../img/secondPlayer.png", {
             frameWidth: 32,
             frameHeight: 48
-        });
+        }); */
 
         // Carga de sonidos
         this.load.audio('music', '../sounds/Banana_Craziness.mp3');
@@ -68,7 +70,7 @@ class MainScene extends Phaser.Scene {
 
             const music = this.sound.add('music');
             music.play({
-                volume: 0.15,
+                volume: 0.01,
                 loop: true,
             });
         }
@@ -229,23 +231,26 @@ class MainScene extends Phaser.Scene {
             10,
             -1
         );
-
+        
         animationP1.CreateAnimationsPlayer();
 
-        const animationP2 = new AnimationsPlayer(
-            ["leftP2", "turnP2", "rightP2"],
-            "secondPlayer",
-            this.anims,
-            [
-                [0, 3],
-                [4, 4],
-                [5, 8]
-            ],
-            10,
-            -1
-        );
+        
+        if ( playerQuantity == 2 ) {
+            const animationP2 = new AnimationsPlayer(
+                ["leftP2", "turnP2", "rightP2"],
+                "secondPlayer",
+                this.anims,
+                [
+                    [0, 3],
+                    [4, 4],
+                    [5, 8]
+                ],
+                10,
+                -1
+            );
 
-        animationP2.CreateAnimationsPlayer();
+            animationP2.CreateAnimationsPlayer();
+        }
 
         /* Mobile Controls */
         if ( screen.width <= 900 ) {
@@ -372,8 +377,69 @@ class Menu extends Phaser.Scene {
     constructor() {
         super("menuScene");
     }
-    preload () {}
-    create () {}
+    preload () {
+        this.load.image( "jungle", '../img/background.png' );
+        this.load.image( "platform", '../img/platform1.png' );
+        this.load.image( "ground", "../img/platform4.png" );
+        this.load.image( "star", "../img/star.png" );
+        this.load.image( "bomb", "../img/bomb.png" );
+        this.load.image( "controlsPlayer1", "../img/Player1.png" );
+        this.load.image( "controlsPlayer2", "../img/Player2.png" );
+        this.load.image("logo", "../img/JumpingMonkey.png");
+        this.load.image("monkey", "../img/monkey.png");
+        this.load.image("buttons-menu", "../img/buttons.png");
+
+        this.load.spritesheet( "dude", "../img/dude.png", {
+            frameWidth: 32,
+            frameHeight: 48
+        });
+        this.load.spritesheet( "secondPlayer", "../img/secondPlayer.png", {
+            frameWidth: 32,
+            frameHeight: 48
+        });
+    }
+    create () {
+        this.add.image(480, 320, "jungle").setScale(2);
+        this.add.image(400, 50, "logo");
+        this.add.image(140, 450, "monkey");
+        this.add.image(400, 310, "buttons-menu");
+
+        const startOpc = this.add.zone(304, 110, 190, 90)
+        startOpc.setOrigin(0, 0)
+        startOpc.setInteractive();
+        startOpc.once('pointerdown', () => this.redirectScene("gameScene"));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(startOpc);
+
+        const levelOpc = this.add.zone(304, 212, 190, 90)
+        levelOpc.setOrigin(0, 0)
+        levelOpc.setInteractive();
+        levelOpc.once('pointerdown', () => this.redirectScene("levelScene"));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(levelOpc);
+
+        const modeOpc = this.add.zone(304, 314, 190, 90)
+        modeOpc.setOrigin(0, 0)
+        modeOpc.setInteractive();
+        modeOpc.once('pointerdown', () => this.redirectScene("modeScene"));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(modeOpc);
+
+        const controlsOpc = this.add.zone(304, 418, 190, 90)
+        controlsOpc.setOrigin(0, 0)
+        controlsOpc.setInteractive();
+        controlsOpc.once('pointerdown', () => this.redirectScene("controlsScene"));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(controlsOpc);
+
+        this.add.text(525, 440, "Level: " + levelName, {
+            fontSize: '28px',
+            fill: '#ffffff',
+        });
+        this.add.text(525, 480, "Mode: " + modeName, {
+            fontSize: '28px',
+            fill: '#ffffff',
+        });
+    }
+    redirectScene (scene) {
+        this.scene.start(scene);
+    }
     update () {}
 }
 
@@ -408,8 +474,47 @@ class EndGame extends Phaser.Scene {
     constructor() {
         super("endScene");
     }
-    preload () {}
-    create () {}
+    preload () {
+        this.load.image("logo", "../img/JumpingMonkey.png");
+        this.load.image("monkey", "../img/monkey.png");
+    }
+    create () {
+        this.add.image(480, 320, "jungle").setScale(2);
+        this.add.image(400, 50, "logo");
+        this.add.image(180, 450, "monkey");
+
+        this.add.text(100, 150, 'Player 1: ' + players[0].score + " Points", {
+            fontSize: '32px',
+            fill: '#ffffff',
+        });
+
+        if ( playerQuantity == 2 ) {
+            this.add.text(100, 250, 'Player 2: ' + players[1].score + " Points", {
+                fontSize: '32px',
+                fill: '#ffffff',
+            });
+        }
+
+        this.add.text(400, 360, "Level: " + levelName, {
+            fontSize: '32px',
+            fill: '#ffffff',
+        });
+        this.add.text(400, 400, "Mode: " + modeName, {
+            fontSize: '32px',
+            fill: '#ffffff',
+        });
+
+        const backOpc = this.add.zone(0, 0, 800, 530)
+        backOpc.setOrigin(0, 0)
+        backOpc.setInteractive();
+        backOpc.once('pointerdown', () => this.redirectScene("menuScene"));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(backOpc);
+    }
+
+    redirectScene (scene) {
+        this.scene.start(scene);
+    }
+
     update () {}
 }
 
@@ -423,12 +528,12 @@ const config = {
     width: 800,
     height: 530,
     scene: [
-        MainScene,
         Menu,
+        MainScene,
         Level,
         Mode,
         Controls,
-        EndGame
+        EndGame,
     ],
     scale: {
         mode: Phaser.Scale.FIT
