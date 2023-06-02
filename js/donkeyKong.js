@@ -33,7 +33,7 @@ class MainScene extends Phaser.Scene {
     }
     preload () {
         //Ruta donde se encuentra nuestro juego javascript
-        this.load.baseURL = "./";
+        /* this.load.baseURL = "./"; */
 
         //Precargar una imagen en Phaser 3. ("Nombre del asset como referencia", "URL de la img")
         /* this.load.image( "jungle", '../img/background.png' );
@@ -59,22 +59,11 @@ class MainScene extends Phaser.Scene {
         }); */
 
         // Carga de sonidos
-        this.load.audio('music', '../sounds/Banana_Craziness.mp3');
+        /* this.load.audio('music', '../sounds/Banana_Craziness.mp3');
         this.load.audio('getStar', '../sounds/Rise06.mp3');
-        this.load.audio('crash', '../sounds/bzzzt.wav');
+        this.load.audio('crash', '../sounds/bzzzt.wav'); */
     }
     create () {
-        //Crear la musica
-        if (stateMusic) {
-            stateMusic = false;
-
-            const music = this.sound.add('music');
-            music.play({
-                volume: 0.01,
-                loop: true,
-            });
-        }
-
         //Creamos el fondo del juego
         //Parametros
         // Width, Height, Nombre del asset de la imagen
@@ -378,6 +367,61 @@ class Menu extends Phaser.Scene {
         super("menuScene");
     }
     preload () {
+        //Barra de progreso
+        let progressBar = this.add.graphics();
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        const loadingTxt = this.add.text(
+            (width / 2) -50,
+            (height / 2) -50,
+            "Loading...",
+            { 
+                font: "bold 32px monospace", 
+                fill: "#ffffff", 
+                align: "center" 
+            }
+        );
+        const percentTxt = this.add.text(
+            width / 2,
+            (height / 2) -180,
+            "0%",
+            { 
+                font: "28px monospace", 
+                fill: "#ffffff", 
+                align: "center" 
+            }
+        );
+        const assetTxt = this.add.text(
+            (width / 2)-150,
+            (height / 2) -100,
+            "",
+            { 
+                font: "28px monospace", 
+                fill: "#ffffff", 
+                align: "center" 
+            }
+        );
+
+        this.load.on("progress", function (value) {
+            percentTxt.setText(parseInt(value * 100) + "%");
+            progressBar.clear();
+            progressBar.fillStyle(0xffffff, 1);
+            progressBar.fillRect(250, 280, 300 * value, 30);
+        });
+
+        this.load.on("fileprogress", function (file) {
+            assetTxt.setText("Loading asset: " + file.key);
+        });
+
+        this.load.on("complete", function () {
+            progressBar.destroy();
+            loadingTxt.destroy();
+            assetTxt.destroy();
+            percentTxt.destroy();
+        });
+
+        this.load.baseURL = "./";
+
         this.load.image( "jungle", '../img/background.png' );
         this.load.image( "platform", '../img/platform1.png' );
         this.load.image( "ground", "../img/platform4.png" );
@@ -388,6 +432,10 @@ class Menu extends Phaser.Scene {
         this.load.image("logo", "../img/JumpingMonkey.png");
         this.load.image("monkey", "../img/monkey.png");
         this.load.image("buttons-menu", "../img/buttons.png");
+        this.load.image("buttons-level", "../img/levelButtons.png");
+        this.load.image("buttons-mode", "../img/modeButtons.png");
+        this.load.image("p1Text", "../img/Player1text.png");
+        this.load.image("p2Text", "../img/Player2text.png");
 
         this.load.spritesheet( "dude", "../img/dude.png", {
             frameWidth: 32,
@@ -397,8 +445,23 @@ class Menu extends Phaser.Scene {
             frameWidth: 32,
             frameHeight: 48
         });
+
+        this.load.audio('music', '../sounds/Banana_Craziness.mp3');
+        this.load.audio('getStar', '../sounds/Rise06.mp3');
+        this.load.audio('crash', '../sounds/bzzzt.wav');
     }
     create () {
+        //Crear la musica
+        if (stateMusic) {
+            stateMusic = false;
+
+            const music = this.sound.add('music');
+            music.play({
+                volume: 0.25,
+                loop: true,
+            });
+        }
+
         this.add.image(480, 320, "jungle").setScale(2);
         this.add.image(400, 50, "logo");
         this.add.image(140, 450, "monkey");
@@ -448,7 +511,44 @@ class Level extends Phaser.Scene {
         super("levelScene");
     }
     preload () {}
-    create () {}
+    create () {
+        this.add.image(480, 320, "jungle").setScale(2);
+        this.add.image(400, 50, "logo");
+        this.add.image(140, 450, "monkey");
+        this.add.image(400, 310, "buttons-level");
+
+        const levelEasy = this.add.zone(304, 110, 190, 90)
+        levelEasy.setOrigin(0, 0)
+        levelEasy.setInteractive();
+        levelEasy.once('pointerdown', () => this.levelSelected("Easy", 1));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(levelEasy);
+
+        const levelMedium = this.add.zone(304, 212, 190, 90)
+        levelMedium.setOrigin(0, 0)
+        levelMedium.setInteractive();
+        levelMedium.once('pointerdown', () => this.levelSelected("Medium", 2));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(levelMedium);
+
+        const levelHard = this.add.zone(304, 314, 190, 90)
+        levelHard.setOrigin(0, 0)
+        levelHard.setInteractive();
+        levelHard.once('pointerdown', () => this.levelSelected("Hard", 3));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(levelHard);
+
+        const back = this.add.zone(304, 418, 190, 90)
+        back.setOrigin(0, 0)
+        back.setInteractive();
+        back.once('pointerdown', () => this.redirectScene("menuScene"));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(back);
+    }
+    levelSelected (leveltxt, newlevel) {
+        levelName = leveltxt;
+        level = newlevel;
+        this.redirectScene("menuScene");
+    }
+    redirectScene (scene) {
+        this.scene.start(scene);
+    }
     update () {}
 }
 
@@ -457,7 +557,38 @@ class Mode extends Phaser.Scene {
         super("modeScene");
     }
     preload () {}
-    create () {}
+    create () {
+        this.add.image(480, 320, "jungle").setScale(2);
+        this.add.image(400, 50, "logo");
+        this.add.image(140, 450, "monkey");
+        this.add.image(400, 310, "buttons-mode");
+
+        const onePlayer = this.add.zone(304, 162, 190, 90)
+        onePlayer.setOrigin(0, 0)
+        onePlayer.setInteractive();
+        onePlayer.once('pointerdown', () => this.modeSelected("1 Players", 1));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(onePlayer);
+
+        const twoPlayer = this.add.zone(304, 266, 190, 90)
+        twoPlayer.setOrigin(0, 0)
+        twoPlayer.setInteractive();
+        twoPlayer.once('pointerdown', () => this.modeSelected("2 Players", 2));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(twoPlayer);
+
+        const back = this.add.zone(304, 370, 190, 90)
+        back.setOrigin(0, 0)
+        back.setInteractive();
+        back.once('pointerdown', () => this.redirectScene("menuScene"));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(back);
+    }
+    modeSelected (mode, quantity) {
+        modeName = mode;
+        playerQuantity = quantity;
+        this.redirectScene("menuScene");
+    }
+    redirectScene (scene) {
+        this.scene.start(scene);
+    }
     update () {}
 }
 
@@ -466,7 +597,23 @@ class Controls extends Phaser.Scene {
         super("controlsScene");
     }
     preload () {}
-    create () {}
+    create () {
+        this.add.image(480, 320, "jungle").setScale(2);
+        this.add.image(400, 50, "logo");
+        this.add.image(200, 455, "p1Text");
+        this.add.image(200, 300, "controlsPlayer1");
+        this.add.image(600, 455, "p2Text");
+        this.add.image(600, 300, "controlsPlayer2");
+
+        const backOpc = this.add.zone(0, 0, 800, 530)
+        backOpc.setOrigin(0, 0)
+        backOpc.setInteractive();
+        backOpc.once('pointerdown', () => this.redirectScene("menuScene"));
+        //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(backOpc);
+    }
+    redirectScene (scene) {
+        this.scene.start(scene);
+    }
     update () {}
 }
 
@@ -474,10 +621,7 @@ class EndGame extends Phaser.Scene {
     constructor() {
         super("endScene");
     }
-    preload () {
-        this.load.image("logo", "../img/JumpingMonkey.png");
-        this.load.image("monkey", "../img/monkey.png");
-    }
+    preload () {}
     create () {
         this.add.image(480, 320, "jungle").setScale(2);
         this.add.image(400, 50, "logo");
@@ -510,11 +654,9 @@ class EndGame extends Phaser.Scene {
         backOpc.once('pointerdown', () => this.redirectScene("menuScene"));
         //this.add.graphics().lineStyle(2, 0xff0000).strokeRectShape(backOpc);
     }
-
     redirectScene (scene) {
         this.scene.start(scene);
     }
-
     update () {}
 }
 
